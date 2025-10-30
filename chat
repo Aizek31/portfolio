@@ -1,0 +1,89 @@
+from datetime import datetime
+
+
+class UnexpectedError(Exception):
+    pass
+
+
+def enter_name():
+    user_name = input('Введите ваше имя: ').strip()
+    while not user_name:
+        print('Имя не может быть пустым!')
+        user_name = input('Введите ваше имя: ').strip()
+    return user_name
+
+
+def chat_users(name):
+    """
+    Запускает интерактивный чат для пользователя с заданным именем.
+    Функция предоставляет пользователю меню с тремя действиями:
+    1. Просмотр текущей истории чата (считывается из файла 'message_text.txt').
+    2. Отправка сообщения, которое сохраняется в файл истории с отметкой времени и именем пользователя.
+    3. Выход из программы с подтверждением.
+
+    При вводе некорректных данных (не число или неправильный выбор) выводится соответствующее сообщение об ошибке,
+    и пользователь может повторить попытку.
+    Если файл истории чата отсутствует, при попытке просмотра истории выводится сообщение о пустой истории.
+
+    Аргументы:
+        name (str): Имя пользователя, которое будет отображаться при отправке сообщений.
+
+    Особенности:
+        - Сообщения сохраняются в файл 'message_text.txt' в формате:
+          [дд.мм.гггг, чч:мм] Имя: Сообщение
+        - При выходе из программы пользователь должен подтвердить своё решение.
+    """
+
+    # Меню выбора действий
+    while True:
+        try:
+            print()
+            print('Выберите действие:')
+            print('1 - Посмотреть текущий чат')
+            print('2 - Отправить сообщение')
+            print('3 - Выйти из программы')
+            user_action = int(input('Ваш выбор: '))
+        except ValueError:
+            print('Нужно вводить число не строкой!')
+            continue
+
+        if user_action == 1:
+            try:
+                with open('message_text.txt', 'r', encoding='utf8') as history_chat_read:
+                    print('\n------История чата-------')
+                    for i_message in history_chat_read:
+                        print(i_message.strip())
+                    print('----------------------------\n')  # Для разделения блоков диалога
+            except FileNotFoundError:  # Если история чата пустая
+                print('История чата пока пуста.')
+                print()
+
+        elif user_action == 2:
+            user_message = input('Введите ваше сообщение: ').strip()
+            if user_message:
+                now = datetime.now()
+                formatted_date = now.strftime("%d.%m.%Y, %H:%M")  # Текущая дата сообщения
+                with open('message_text.txt', 'a', encoding='utf8') as history_chat_write:
+                    history_chat_write.write(
+                        f'[{formatted_date}] {name}: {user_message}\n')  # Запись сообщения в историю
+            else:
+                print('Сообщение не может быть пустым!')
+
+        # Выход из чата
+        elif user_action == 3:
+            confirm = input('Вы уверены, что хотите выйти? (да/нет): ').strip().lower()
+            if confirm == 'да':
+                print()
+                print('Выход из чата. Пока!')
+                break
+        else:
+            print('Некорректный выбор. Пожалуйста, введите 1, 2 или 3.')
+
+
+try:
+    firstname = enter_name()
+    chat_users(firstname)
+
+# Обработка неожиданных ошибок
+except UnexpectedError as mistake:
+    print(f'Ошибка: {mistake}')
