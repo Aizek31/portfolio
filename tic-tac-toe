@@ -1,0 +1,148 @@
+# Класс, который описывает одну клетку поля
+class Cell:
+    def __init__(self, number_cell):
+        self.number_cell = number_cell  # номер клетки от 1 до 9
+        self.occupied = False           # флаг, занята ли клетка
+        self.value = None               # значение клетки: 'X', 'O' или None
+
+    def mark(self, player_symbol):
+        # Помечает клетку символом игрока, если она не занята
+        if not self.occupied:
+            self.value = player_symbol
+            self.occupied = True
+            return True
+        return False
+
+    def clear_cell(self):
+        # Очищает клетку (делает её свободной)
+        self.occupied = False
+        self.value = None
+
+# Класс, описывающий игровое поле
+class Board:
+    def __init__(self):
+        # Создаём список из 9 клеток, номерами с 1 до 9
+        self.cells = [Cell(number + 1) for number in range(9)]
+
+    def display(self):
+        # Отображает поле в виде 3x3
+        for index in range(3):
+            row = self.cells[index * 3:(index + 1) * 3]
+            # Показываем значение клетки, если есть, иначе номер клетки
+            print(' | '.join(cell.value if cell.value else str(cell.number_cell) for cell in row))
+            if index < 2:
+                print('-' * 9)
+
+    def mark_cell(self, position, player_symbol):
+        # Помечает клетку по позиции символом игрока, если позиция валидна
+        if 1 <= position <= 9:
+            return self.cells[position - 1].mark(player_symbol)
+        return False
+
+    def is_full(self):
+        # Проверяет, заняты ли все клетки (ничья, если поле полное и нет победителя)
+        return all(cell.occupied for cell in self.cells)
+
+    def clear(self):
+        # Очищает все клетки поля
+        for cell in self.cells:
+            cell.clear_cell()
+
+    def check_winner(self, player_symbol):
+        # Проверяет, есть ли у игрока выигрышная комбинация
+        wins = [
+            (0, 1, 2), (3, 4, 5), (6, 7, 8),  # строки
+            (0, 3, 6), (1, 4, 7), (2, 5, 8),  # столбцы
+            (0, 4, 8), (2, 4, 6)              # диагонали
+        ]
+        for win_a, win_b, win_c in wins:
+            if (self.cells[win_a].value == player_symbol and
+                self.cells[win_b].value == player_symbol and
+                self.cells[win_c].value == player_symbol):
+                return True
+        return False
+
+
+# Класс, описывающий игрока
+class Player:
+    def __init__(self, name, symbol):
+        self.name = name
+        self.symbol = symbol
+
+    def get_move(self, board):
+        # Запрашивает ход игрока, проверяет корректность и возвращает его
+        while True:
+            try:
+                move = int(input(f'{self.name} ({self.symbol}) введите номер клетки для хода: '))
+                if 1 <= move <= 9 and not board.cells[move - 1].occupied:
+                    return move
+                else:
+                    print('Неверный ход, клетка занята или номер вне диапазона')
+            except ValueError:
+                print('Введите число от 1 до 9')
+
+
+# Класс, управляющий ходом игры
+class Game:
+    def __init__(self):
+        self.board = Board()
+        name_1 = input('Введите имя 1-го игрока (X): ')
+        name_2 = input('Введите имя 2-го игрока (O): ')
+        self.player = [Player(name_1, 'X'), Player(name_2, 'O')]
+        self.scores = {name_1: 0, name_2: 0}
+
+    def start_one_move(self, player):
+        self.board.display()
+        move = player.get_move(self.board)
+        self.board.mark_cell(move, player.symbol)
+        if self.board.check_winner(player.symbol):
+            self.board.display()
+            print(f'Победил {player.name}!')
+            self.scores[player.name] += 1
+            return True
+        return False
+
+    def play_turn(self, player):
+        # Один ход игрока с проверкой победы
+        self.board.display()
+        move = player.get_move(self.board)
+        self.board.mark_cell(move, player.symbol)
+
+        if self.board.check_winner(player.symbol):
+            self.board.display()
+            print(f"Победил {player.name}!")
+            self.scores[player.name] += 1
+            return True
+        return False
+
+    def play_game(self):
+        # Игровой цикл одной партии
+        self.board.clear()
+        current_index = 0
+        while True:
+            player = self.player[current_index]
+            if self.play_turn(player):
+                return True  # победа
+            if self.board.is_full():
+                self.board.display()
+                print("Ничья!")
+                return False
+            current_index = 1 - current_index  # смена игрока
+
+    def start(self):
+        # Основной цикл игры с возможностью играть несколько партий
+        print("Начинается игра 'Крестики-нолики'.")
+        while True:
+            self.play_game()
+            print("Текущий счёт:")
+            for name, score in self.scores.items():
+                print(f"{name}: {score}")
+            cont = input("Хотите сыграть ещё раз? (да/нет): ").strip().lower()
+            if cont not in ('да', 'д', 'yes', 'y'):
+                print("Спасибо за игру!")
+                break
+
+
+if __name__ == "__main__":
+    game = Game()
+    game.start()
