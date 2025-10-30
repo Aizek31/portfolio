@@ -1,2 +1,2 @@
-# portfolio
+# Portfolio
 My educational and pet projects
